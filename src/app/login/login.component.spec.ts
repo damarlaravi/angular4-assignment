@@ -1,8 +1,8 @@
-import {TestBed, ComponentFixture, async} from '@angular/core/testing';
-import {ReactiveFormsModule, FormsModule} from '@angular/forms';
+import {async, ComponentFixture, inject, TestBed} from '@angular/core/testing';
+import {FormsModule, ReactiveFormsModule} from '@angular/forms';
 import {LoginComponent} from './login.component';
-import {User} from '../models/user.model';
-import {Router, RouterModule} from '@angular/router';
+import {Router} from '@angular/router';
+import {FormHelperService} from '../services/form-helper.service';
 
 
 describe('Component: Login', () => {
@@ -10,15 +10,15 @@ describe('Component: Login', () => {
   let component: any;
   let fixture: ComponentFixture<LoginComponent>;
 
-  const mockRouter = {
-    navigate: jasmine.createSpy('navigate')
-  };
+  class RouterStub {
+    navigateByUrl(url: string) { return url; }
+  }
 
   beforeEach(async(() => {
 
     // refine the test module by declaring the test component
     TestBed.configureTestingModule({
-      providers: [{provide: Router, useValue: mockRouter}],
+      providers: [{provide: Router, useClass: RouterStub}, FormHelperService],
       imports: [ReactiveFormsModule, FormsModule],
       declarations: [LoginComponent]
     }).compileComponents();
@@ -45,17 +45,15 @@ describe('Component: Login', () => {
     errors = username.errors || {};
     expect(errors['required']).toBeTruthy();
 
-    // Set username to something
+    // Set username to something Incorrect
     username.setValue('te');
     errors = username.errors || {};
-    expect(errors['required']).toBeFalsy();
-    expect(errors['pattern']).toBeTruthy();
+    expect(Object.keys(errors).length > 0).toBeTruthy();
 
     // Set username to something correct
     username.setValue('ravi');
     errors = username.errors || {};
-    expect(errors['required']).toBeFalsy();
-    expect(errors['pattern']).toBeFalsy();
+    expect(Object.keys(errors).length === 0).toBeTruthy();
   });
 
   it('password field validity', () => {
@@ -66,32 +64,30 @@ describe('Component: Login', () => {
     errors = password.errors || {};
     expect(errors['required']).toBeTruthy();
 
-    // Set email to something
-    password.setValue('123456');
+    // Set password to something
+    password.setValue('12345');
     errors = password.errors || {};
     expect(errors['required']).toBeFalsy();
-    expect(errors['minlength']).toBeTruthy();
+    expect(Object.keys(errors).length > 0).toBeTruthy();
 
-    // Set email to something correct
+    // Set password to something correct
     password.setValue('123456789');
     errors = password.errors || {};
     expect(errors['required']).toBeFalsy();
-    expect(errors['minlength']).toBeFalsy();
+    expect(Object.keys(errors).length === 0).toBeTruthy();
   });
 
-  it('submitting a form emits a user', () => {
+  it('submitting a form navigate to home page', inject([Router], (router: Router) => {
+    const spy = spyOn(router, 'navigateByUrl');
     expect(component.loginUser.valid).toBeFalsy();
     component.loginUser.controls['username'].setValue('ravi');
     component.loginUser.controls['password'].setValue('123456');
     expect(component.loginUser.valid).toBeTruthy();
 
-    const user: User = new User();
-
     // Trigger the login function
     component.login();
-
-    // Now we can check to make sure the emitted value is correct
-    expect(user.username).toBe('ravi');
-    expect(user.password).toBe('123456');
-  });
+    const navArgs = spy.calls.first().args[0];
+    // Now we can check to make sure the emitted value is correct, navigate home component
+    expect(navArgs).toBe('home');
+  }));
 });

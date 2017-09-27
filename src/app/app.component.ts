@@ -1,4 +1,5 @@
 import {Component, OnInit} from '@angular/core';
+import {environment} from '../environments/environment';
 
 @Component({
   selector: 'app-root',
@@ -9,6 +10,7 @@ export class AppComponent implements OnInit {
   title = 'app works!';
 
   ngOnInit() {
-    console.log(' In App Component')
+    const version = environment.version;
+    console.log(' In App Component', version)
   }
 }
